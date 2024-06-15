@@ -1,5 +1,5 @@
 {
-  "name": "ispwa",
+  "name": "is-pwa",
   "private": true,
   "type": "module",
   "scripts": {

@@ -26,7 +26,7 @@ export default defineNuxtConfig({
     defaultLocale: "en",
     description: "Check whether a site is installable as an app",
     name: "Is PWA?",
-    url: "https://ispwa.vercel.app",
+    url: "https://is-pwa.vercel.app",
   },
   tailwindcss: {
     exposeConfig: true,

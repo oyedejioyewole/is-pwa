@@ -12,7 +12,7 @@ Check whether a URL can be installed as a web app
 
 ## 🚀 Getting Started
 
-Access the live site at [ispwa.vercel.app](https://ispwa.vercel.app)
+Access the live site at [is-pwa.vercel.app](https://is-pwa.vercel.app)
 
 Continue reading if you want to run the project locally.
 

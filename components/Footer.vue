@@ -19,7 +19,7 @@
             <NuxtLink
               class="transition-opacity hover:opacity-50"
               target="_blank"
-              to="https://github.com/oyedejioyewole/ispwa"
+              to="https://github.com/oyedejioyewole/is-pwa"
             >
               <PhosphorIconGithubLogo size="25" />
             </NuxtLink>
