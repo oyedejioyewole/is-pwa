@@ -39,7 +39,7 @@ const notivueTheme = computed(() => {
 <template>
   <AnimationsBlobMovement />
 
-  <div class="mx-auto grid h-screen w-[90%] grid-rows-3 py-10">
+  <div class="mx-auto grid h-screen grid-rows-3 py-10 md:w-[90%]">
     <Header />
 
     <Content />
@@ -54,6 +54,12 @@ const notivueTheme = computed(() => {
 
 <style>
 body {
-  @apply bg-orange-100 text-orange-900 transition selection:bg-orange-300 dark:bg-orange-900 dark:text-orange-100;
+  @apply overflow-hidden bg-orange-100 text-orange-900 transition selection:bg-orange-300 dark:bg-orange-900 dark:text-orange-100;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --nv-root-x-align: center;
+  }
 }
 </style>

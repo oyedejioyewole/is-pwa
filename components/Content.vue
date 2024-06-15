@@ -27,9 +27,9 @@ const handleSubmit = async () => {
 
     if (response)
       response.isFound
-        ? notification.resolve("Website is installable")
-        : notification.reject("Website isn't installable");
-    else notification.reject("URL not found");
+        ? notification.resolve("URL is a web app")
+        : notification.reject("URL isn't a web app");
+    else notification.reject("URL isn't reachable");
   } else {
     results.error.issues.forEach(({ message }) =>
       push.error({ message, title: "Validation issue" }),
@@ -42,10 +42,13 @@ const handleSubmit = async () => {
 
 <template>
   <main class="m-auto">
-    <form class="flex items-center gap-x-4" @submit.prevent="handleSubmit">
-      <AnimationsBlobHide>
+    <form
+      class="flex flex-col items-center gap-4 md:flex-row"
+      @submit.prevent="handleSubmit"
+    >
+      <AnimationsBlobHide class="contents">
         <input
-          class="w-96 flex-1 rounded-full border border-orange-900 bg-transparent py-4 pl-4 outline-none ring-orange-900 hover:ring focus:ring dark:border-orange-100 dark:ring-orange-100"
+          class="rounded-full border border-orange-900 bg-transparent py-4 pl-4 outline-none ring-orange-900 hover:ring focus:ring dark:border-orange-100 dark:ring-orange-100"
           name="url"
           required
           type="url"
@@ -53,9 +56,9 @@ const handleSubmit = async () => {
         />
       </AnimationsBlobHide>
 
-      <AnimationsBlobHide>
+      <AnimationsBlobHide class="contents">
         <button
-          class="w-20 flex-none rounded-full border border-orange-900 bg-transparent py-4 outline-none ring-orange-900 hover:ring focus:ring dark:border-orange-100 dark:ring-orange-100"
+          class="w-full rounded-full border border-orange-900 bg-transparent py-4 outline-none ring-orange-900 hover:ring focus:ring dark:border-orange-100 dark:ring-orange-100 md:w-20"
           type="submit"
         >
           <PhosphorIconMagnifyingGlass

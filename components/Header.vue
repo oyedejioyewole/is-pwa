@@ -15,7 +15,7 @@ const theme = computed(() => ({
 </script>
 
 <template>
-  <header class="mx-auto grid w-full grid-rows-2">
+  <header class="mx-auto grid w-3/4 grid-rows-2 md:w-full">
     <!-- Theme switcher (loading indicator) -->
     <span class="ml-auto" v-if="$colorMode.unknown"> Loading ... </span>
 
@@ -42,10 +42,10 @@ const theme = computed(() => ({
 
     <div class="m-auto space-y-4 text-center">
       <!-- Name -->
-      <h1 class="text-7xl font-bold">Is PWA?</h1>
+      <h1 class="text-5xl font-bold md:text-7xl">Is PWA?</h1>
 
       <!-- Description -->
-      <p class="font-handwriting text-xl">
+      <p class="font-handwriting md:text-xl">
         Check whether a URL can be installed as a web app
       </p>
     </div>

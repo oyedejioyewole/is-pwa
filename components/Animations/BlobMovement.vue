@@ -11,13 +11,13 @@ watch([x, y], ([newX, newY]) =>
 );
 
 watchOnce([x, y], () => {
-  gsap.set("#cursor-fx", { scale: 1 });
+  gsap.set("#cursor-fx", { display: "block" });
 });
 </script>
 
 <template>
   <div
-    class="absolute -z-10 aspect-square h-10 scale-0 rounded-full border border-orange-900 dark:border-orange-100"
+    class="absolute -z-10 hidden aspect-square h-10 rounded-full border border-orange-900 dark:border-orange-100"
     id="cursor-fx"
   />
 </template>
