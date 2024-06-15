@@ -2,7 +2,7 @@
 <img src="./public/favicon.svg" width="128" />
 </div>
 
-# Is PWA
+# Is PWA?
 
 Check whether a URL can be installed as a web app
 
