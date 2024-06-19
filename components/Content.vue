@@ -4,10 +4,7 @@ import { z } from "zod";
 const url = ref<string>("");
 
 const handleSubmit = async () => {
-  const urlSchema = z.union([
-    z.string().url().startsWith("https://"),
-    z.string().url().startsWith("http://"),
-  ]);
+  const urlSchema = z.string().url().startsWith("https://");
 
   const results = urlSchema.safeParse(url.value);
 
@@ -25,15 +22,15 @@ const handleSubmit = async () => {
       },
     });
 
-    if (response)
-      response.isFound
-        ? notification.resolve("URL is a web app")
-        : notification.reject("URL isn't a web app");
-    else notification.reject("URL isn't reachable");
+    if (response) {
+      if (response.isFound && response.isValid)
+        notification.resolve("URL is installable");
+      else if (response.isFound && !response.isValid)
+        notification.resolve("URL is partially installable");
+      else notification.reject("URL isn't installable");
+    } else notification.reject("URL doesn't exist");
   } else {
-    results.error.issues.forEach(({ message }) =>
-      push.error({ message, title: "Validation issue" }),
-    );
+    results.error.issues.forEach(({ message }) => push.error(message));
   }
 
   url.value = "";
@@ -41,7 +38,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <main class="m-auto">
+  <main class="mx-auto self-center">
     <form
       class="flex flex-col items-center gap-4 md:flex-row"
       @submit.prevent="handleSubmit"

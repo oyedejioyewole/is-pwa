@@ -1,5 +1,5 @@
 <template>
-  <footer class="mt-auto flex items-center justify-around">
+  <footer class="flex items-center justify-around self-end">
     <div>
       Made with 🎧 by
       <AnimationsBlobHide class="inline">
