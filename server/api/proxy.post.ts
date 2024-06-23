@@ -1,6 +1,6 @@
+import chromium from "@sparticuz/chromium";
 import { ZenRows } from "zenrows";
 import { z } from "zod";
-import puppeteer from "puppeteer";
 
 export default defineEventHandler(async (event) => {
   const urlSchema = z.object({
@@ -12,7 +12,21 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, urlSchema.parse);
 
-  const browser = await puppeteer.launch();
+  const puppeteer = import.meta.dev
+    ? await import("puppeteer")
+    : await import("puppeteer-core");
+
+  const browser = await puppeteer.launch(
+    import.meta.dev
+      ? {}
+      : {
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+          ignoreHTTPSErrors: true,
+        },
+  );
   const siteTab = await browser.newPage();
 
   const response = await siteTab
