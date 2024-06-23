@@ -1,7 +1,6 @@
-import type { FetchError } from "ofetch";
+import chromium from "@sparticuz/chromium";
 import { ZenRows } from "zenrows";
 import { z } from "zod";
-import { locateManifest, validateManifest } from "../utils/manifest";
 
 export default defineEventHandler(async (event) => {
   const urlSchema = z.object({
@@ -13,30 +12,67 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, urlSchema.parse);
 
-  const response = await $fetch<string>(body.url, {
-    headers: {
-      "User-Agent":
-        "'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'",
-    },
-  }).catch(async (error: FetchError) => {
-    switch (error.status) {
-      case 403:
-        const zenrows = new ZenRows(process.env.NUXT_ZENROWS_API_KEY ?? "");
-        const { data } = await zenrows.get(body.url);
-        return data as string;
-      default:
-        return null;
-    }
-  });
+  const puppeteer = import.meta.dev
+    ? await import("puppeteer")
+    : await import("puppeteer-core");
+
+  const browser = await puppeteer.launch(
+    import.meta.dev
+      ? {}
+      : {
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+          ignoreHTTPSErrors: true,
+        },
+  );
+  const siteTab = await browser.newPage();
+
+  const response = await siteTab
+    .goto(body.url, {
+      waitUntil: "domcontentloaded",
+    })
+    .catch(() => null);
+
+  const result = {
+    isFound: false,
+    isValid: false,
+  };
 
   if (response) {
-    const manifestPath = locateManifest(response);
+    if (response.ok()) {
+      const manifestPath = await siteTab
+        .$eval("link[rel='manifest']", (element) => element.href)
+        .catch(() => null);
 
-    if (manifestPath) {
-      const isValid = await validateManifest(
-        new URL(manifestPath, body.url).href,
-      );
-      return { isFound: !!manifestPath, isValid };
+      if (manifestPath) {
+        result.isFound = true;
+
+        const manifestTab = await browser.newPage();
+        const response = await manifestTab.goto(manifestPath, {
+          timeout: 10000,
+        });
+
+        if (response && response.ok()) {
+          const manifest = await response.json().catch(() => null);
+          if (!manifest) return;
+
+          const isValid = ["display", "icons", "name", "start_url"].every(
+            (field) => Object.hasOwn(manifest, field),
+          );
+          result.isValid = isValid;
+        }
+      }
+    } else {
+      switch (response.status()) {
+        case 403: {
+          const zenrows = new ZenRows(process.env.NUXT_ZENROWS_API_KEY ?? "");
+          const data = await zenrows.get(body.url, { js_render: true });
+
+          console.log(data);
+        }
+      }
     }
   }
 });
