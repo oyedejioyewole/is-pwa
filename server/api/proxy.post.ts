@@ -35,5 +35,5 @@ export default defineEventHandler(async (event) => {
     }
   });
 
-  return stream;
+  return sendStream(event, stream);
 });
