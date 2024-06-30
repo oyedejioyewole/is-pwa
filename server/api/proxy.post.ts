@@ -1,5 +1,4 @@
-import chromium from "@sparticuz/chromium";
-import { ZenRows } from "zenrows";
+import { Readable } from "node:stream";
 import { z } from "zod";
 
 export default defineEventHandler(async (event) => {
@@ -10,69 +9,31 @@ export default defineEventHandler(async (event) => {
     ]),
   });
 
-  const body = await readValidatedBody(event, urlSchema.parse);
+  const { url } = await readValidatedBody(event, urlSchema.parse);
 
-  const puppeteer = import.meta.dev
-    ? await import("puppeteer")
-    : await import("puppeteer-core");
-
-  const browser = await puppeteer.launch(
-    import.meta.dev
-      ? {}
-      : {
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
-          ignoreHTTPSErrors: true,
-        },
-  );
-  const siteTab = await browser.newPage();
-
-  const response = await siteTab
-    .goto(body.url, {
-      waitUntil: "domcontentloaded",
-    })
-    .catch(() => null);
-
-  const result = {
-    isFound: false,
-    isValid: false,
-  };
-
-  if (response) {
-    if (response.ok()) {
-      const manifestPath = await siteTab
-        .$eval("link[rel='manifest']", (element) => element.href)
-        .catch(() => null);
-
-      if (manifestPath) {
-        result.isFound = true;
-
-        const manifestTab = await browser.newPage();
-        const response = await manifestTab.goto(manifestPath, {
-          timeout: 10000,
+  const stream = new Readable({
+    destroy: (error) => {
+      if (error) {
+        throw createError({
+          message: error.message,
+          statusCode: 502,
+          statusMessage: error.name,
         });
-
-        if (response && response.ok()) {
-          const manifest = await response.json().catch(() => null);
-          if (!manifest) return;
-
-          const isValid = ["display", "icons", "name", "start_url"].every(
-            (field) => Object.hasOwn(manifest, field),
-          );
-          result.isValid = isValid;
-        }
       }
-    } else {
-      switch (response.status()) {
-        case 403: {
-          const zenrows = new ZenRows(process.env.NUXT_ZENROWS_API_KEY ?? "");
-          const data = await zenrows.get(body.url, { js_render: true });
+    },
+    read: () => {},
+  });
 
-          console.log(data);
-        }
+  scraper(url).then((response) => {
+    if (response) {
+      if (response.type === "error") {
+        stream.destroy(response.data);
+      } else if (response.type === "success") {
+        stream.push(JSON.stringify(response.data));
+        stream.push(null);
       }
     }
-  }
+  });
+
+  return stream;
 });
