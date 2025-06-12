@@ -32,13 +32,6 @@ importers:
       zod:
         specifier: ^3.23.8
         version: 3.23.8
-    optionalDependencies:
-      prettier:
-        specifier: ^3.3.2
-        version: 3.3.2
-      prettier-plugin-tailwindcss:
-        specifier: ^0.6.4
-        version: 0.6.4(prettier@3.3.2)
     devDependencies:
       '@nuxtjs/color-mode':
         specifier: ^3.4.1
@@ -64,6 +57,13 @@ importers:
       nuxt-phosphor-icons:
         specifier: ^1.3.0
         version: 1.3.0(magicast@0.3.4)(rollup@4.18.0)(vue@3.4.29)
+    optionalDependencies:
+      prettier:
+        specifier: ^3.3.2
+        version: 3.3.2
+      prettier-plugin-tailwindcss:
+        specifier: ^0.6.4
+        version: 0.6.4(prettier@3.3.2)
 
 packages:
 
