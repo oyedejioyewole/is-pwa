@@ -3,15 +3,9 @@ export default defineNuxtConfig({
     classSuffix: "",
   },
   devtools: { enabled: true },
-  googleFonts: {
-    families: {
-      Inter: [400, 700],
-      Pacifico: true,
-    },
-  },
   modules: [
+    "@nuxt/fonts",
     "@nuxtjs/color-mode",
-    "@nuxtjs/google-fonts",
     "@nuxtjs/seo",
     "@nuxtjs/tailwindcss",
     "@vite-pwa/nuxt",
@@ -19,8 +13,9 @@ export default defineNuxtConfig({
     "notivue/nuxt",
     "nuxt-phosphor-icons",
   ],
+  css: ["notivue/animations.css", "notivue/notification.css"],
   notivue: {
-    position: "bottom-right",
+    position: "top-right",
   },
   site: {
     defaultLocale: "en",
@@ -28,7 +23,13 @@ export default defineNuxtConfig({
     name: "Is PWA?",
     url: "https://is-pwa.vercel.app",
   },
-  tailwindcss: {
-    exposeConfig: true,
+  compatibilityDate: "2025-09-16",
+  phosphorIcons: {
+    componentName: "ui-icon",
+  },
+  nitro: {
+    prerender: {
+      crawlLinks: true,
+    },
   },
 });

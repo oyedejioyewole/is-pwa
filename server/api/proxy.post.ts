@@ -1,38 +1,28 @@
-import { Readable } from "node:stream";
 import { z } from "zod";
+import { PROXY_BODY_SCHEMA } from "../utils/schema";
+import scraper from "../utils/scraper";
 
 export default defineEventHandler(async (event) => {
-  const urlSchema = z.object({
-    url: z.union([
-      z.string().url().startsWith("https://"),
-      z.string().url().startsWith("http://"),
-    ]),
-  });
+  setResponseHeader(event, "Content-Type", "application/x-ndjson");
+  setResponseHeader(event, "Cache-Control", "no-cache");
+  setResponseHeader(event, "Transfer-Encoding", "chunked");
 
-  const { url } = await readValidatedBody(event, urlSchema.parse);
+  const parsedBody = await readValidatedBody(
+    event,
+    PROXY_BODY_SCHEMA.safeParseAsync,
+  );
 
-  const stream = new Readable({
-    destroy: (error) => {
-      if (error) {
-        throw createError({
-          message: error.message,
-          statusCode: 502,
-          statusMessage: error.name,
-        });
-      }
+  if (!parsedBody.success)
+    throw createError({
+      data: z.prettifyError(parsedBody.error).split("\n"),
+      message: "Failed to parse request body",
+      statusCode: 400,
+    });
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      await scraper(parsedBody.data.to, controller);
     },
-    read: () => {},
-  });
-
-  scraper(url).then((response) => {
-    if (response) {
-      if (response.type === "error") {
-        stream.destroy(response.data);
-      } else if (response.type === "success") {
-        stream.push(JSON.stringify(response.data));
-        stream.push(null);
-      }
-    }
   });
 
   return sendStream(event, stream);
