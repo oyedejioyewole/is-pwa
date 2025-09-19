@@ -31,11 +31,11 @@ export default async (
     const { origin } = new URL(url);
 
     // 3rd step (Load the URL)
-    await siteTab.goto(origin, { waitUntil: "domcontentloaded" });
+    await siteTab.goto(origin);
 
     // 4th step (Check if there's a manifest link tag, provided the grace period of 3s)
     const linkTagWithManifest = await siteTab
-      .waitForSelector('link[rel="manifest"]', { timeout: 10000 })
+      .waitForSelector('link[rel="manifest"]', { timeout: 5000 })
       .catch(() => {
         streamController.enqueue(
           stringify({
