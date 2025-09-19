@@ -4,9 +4,9 @@ import { animate } from "animejs";
 const cursorRef = useTemplateRef<HTMLDivElement>("cursorRef");
 const paused = shallowRef(false);
 
-const { x, y } = useMouse({ touch: false });
-watch([x, y, paused], ([newX, newY, isPaused]) => {
-  if (!cursorRef.value || isPaused) return;
+const { x, y, sourceType } = useMouse();
+watch([x, y, sourceType, paused], ([newX, newY, newSourceType, isPaused]) => {
+  if (!cursorRef.value || isPaused || newSourceType === "touch") return;
 
   animate(cursorRef.value, {
     x: newX,

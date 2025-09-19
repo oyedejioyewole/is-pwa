@@ -35,21 +35,19 @@ export default async (
 
     // 4th step (Check if there's a manifest link tag, provided the grace period of 3s)
     const linkTagWithManifest = await siteTab
-      .waitForSelector('link[rel="manifest"]', { timeout: 3000 })
-      .catch(() =>
+      .waitForSelector('link[rel="manifest"]', { timeout: 10000 })
+      .catch(() => {
         streamController.enqueue(
           stringify({
             event: "manifest:not-found",
+            data: { message: "No webmanifest was found during grace period." },
           }),
-        ),
-      );
+        );
 
-    // Should never be null because element isn't hidden
-    // https://pptr.dev/api/puppeteer.page.waitforselector
-    if (!linkTagWithManifest) {
-      await browser.close();
-      return;
-    }
+        return null;
+      });
+
+    if (!linkTagWithManifest) return;
 
     const manifestHref = await linkTagWithManifest.evaluate((el) => el.href);
     const manifestContent = await $fetch(manifestHref, {

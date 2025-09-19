@@ -18,8 +18,8 @@ const toggleDarkMode = () => {
       <UiIcon
         :name="{
           desktop: $colorMode.preference === 'system',
-          sun: $colorMode.value === 'light',
-          'moon-stars': $colorMode.value === 'dark',
+          sun: $colorMode.value === 'dark',
+          'moon-stars': $colorMode.value === 'light',
         }"
         :size="20"
       />
