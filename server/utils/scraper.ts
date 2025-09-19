@@ -46,7 +46,10 @@ export default async (
 
     // Should never be null because element isn't hidden
     // https://pptr.dev/api/puppeteer.page.waitforselector
-    if (!linkTagWithManifest) return;
+    if (!linkTagWithManifest) {
+      await browser.close();
+      return;
+    }
 
     const manifestHref = await linkTagWithManifest.evaluate((el) => el.href);
     const manifestContent = await $fetch(manifestHref, {

@@ -8,7 +8,10 @@ export const MANIFEST_SCHEMA = z
     short_name: z.string().optional(),
     icons: z
       .array(
-        z.object({ src: z.string(), sizes: z.string().regex(/^\d+x\d+$/) }),
+        z.object({
+          src: z.string(),
+          sizes: z.string(),
+        }),
       )
       .min(1)
       .refine((icons) =>
