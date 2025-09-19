@@ -48,7 +48,7 @@ export default async (
     // https://pptr.dev/api/puppeteer.page.waitforselector
     if (!linkTagWithManifest) return;
 
-    const manifestHref = await linkTagWithManifest!.evaluate((el) => el.href);
+    const manifestHref = await linkTagWithManifest.evaluate((el) => el.href);
     const manifestContent = await $fetch(manifestHref, {
       onResponseError: ({ error }) => {
         if (!error) return;
@@ -60,17 +60,17 @@ export default async (
     const parsedManifest =
       await MANIFEST_SCHEMA.safeParseAsync(manifestContent);
 
-    if (!parsedManifest.success)
+    if (parsedManifest.success)
       streamController.enqueue(
         stringify({
-          event: "manifest:not-installable",
-          data: z.prettifyError(parsedManifest.error).split("\n"),
+          event: "manifest:installable",
         }),
       );
     else
       streamController.enqueue(
         stringify({
-          event: "manifest:installable",
+          event: "manifest:not-installable",
+          data: z.prettifyError(parsedManifest.error).split("\n"),
         }),
       );
   } catch (error: unknown) {

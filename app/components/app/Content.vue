@@ -30,7 +30,7 @@ const handleSubmit = async () => {
   const { origin } = new URL(parsedUrl.data);
   console.info(`Dispatched request ${origin} to proxy`);
 
-  const notification = push.promise("Forwading request");
+  const notification = push.promise("Forwarding request");
 
   pending.value = true;
   const response = await $fetch<ReadableStream>("/api/proxy", {
@@ -50,7 +50,7 @@ const handleSubmit = async () => {
         break;
       case "error":
         notification.error(
-          streamEvent.data?.message || "An error occured at the proxy",
+          streamEvent.data?.message || "An error occurred at the proxy",
         );
         console.error("Error:", streamEvent.data);
         break;
