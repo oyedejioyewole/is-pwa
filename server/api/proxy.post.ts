@@ -1,42 +1,29 @@
-import type { FetchError } from "ofetch";
-import { ZenRows } from "zenrows";
 import { z } from "zod";
-import { locateManifest, validateManifest } from "../utils/manifest";
+import { PROXY_BODY_SCHEMA } from "../utils/schema";
+import scraper from "../utils/scraper";
 
 export default defineEventHandler(async (event) => {
-  const urlSchema = z.object({
-    url: z.union([
-      z.string().url().startsWith("https://"),
-      z.string().url().startsWith("http://"),
-    ]),
-  });
+  setResponseHeader(event, "Content-Type", "application/x-ndjson");
+  setResponseHeader(event, "Cache-Control", "no-cache");
+  setResponseHeader(event, "Transfer-Encoding", "chunked");
 
-  const body = await readValidatedBody(event, urlSchema.parse);
+  const parsedBody = await readValidatedBody(
+    event,
+    PROXY_BODY_SCHEMA.safeParseAsync,
+  );
 
-  const response = await $fetch<string>(body.url, {
-    headers: {
-      "User-Agent":
-        "'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'",
+  if (!parsedBody.success)
+    throw createError({
+      data: z.prettifyError(parsedBody.error).split("\n"),
+      message: "Failed to parse request body",
+      statusCode: 400,
+    });
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      await scraper(parsedBody.data.to, controller);
     },
-  }).catch(async (error: FetchError) => {
-    switch (error.status) {
-      case 403:
-        const zenrows = new ZenRows(process.env.NUXT_ZENROWS_API_KEY ?? "");
-        const { data } = await zenrows.get(body.url);
-        return data as string;
-      default:
-        return null;
-    }
   });
 
-  if (response) {
-    const manifestPath = locateManifest(response);
-
-    if (manifestPath) {
-      const isValid = await validateManifest(
-        new URL(manifestPath, body.url).href,
-      );
-      return { isFound: !!manifestPath, isValid };
-    }
-  }
+  return sendStream(event, stream);
 });
