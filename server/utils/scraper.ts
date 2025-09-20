@@ -31,23 +31,20 @@ export default async (
     const { origin } = new URL(url);
 
     // 3rd step (Load the URL)
-    await siteTab.goto(origin);
+    await siteTab.goto(origin, { waitUntil: "domcontentloaded" });
 
     // 4th step (Check if there's a manifest link tag, provided the grace period of 3s)
-    const linkTagWithManifest = await siteTab
-      .waitForSelector('link[rel="manifest"]', { timeout: 5000 })
-      .catch(() => {
-        streamController.enqueue(
-          stringify({
-            event: "manifest:not-found",
-            data: { message: "No webmanifest was found during grace period." },
-          }),
-        );
+    const linkTagWithManifest = await siteTab.$('link[rel="manifest"]');
 
-        return null;
-      });
+    if (!linkTagWithManifest) {
+      streamController.enqueue(
+        stringify({
+          event: "manifest:not-found",
+        }),
+      );
 
-    if (!linkTagWithManifest) return;
+      return;
+    }
 
     const manifestHref = await linkTagWithManifest.evaluate((el) => el.href);
     const manifestContent = await $fetch(manifestHref, {
