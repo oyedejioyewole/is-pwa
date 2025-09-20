@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { z } from "zod";
 import { stringify } from "./data";
 import { MANIFEST_SCHEMA } from "./schema";
@@ -7,19 +8,19 @@ export default async (
   url: string,
   streamController: ReadableStreamDefaultController,
 ) => {
-  const options = { headless: !import.meta.dev };
-
   streamController.enqueue(stringify({ event: "start" }));
 
-  const browser = await puppeteer.launch(options);
+  const browser = await puppeteer.launch({
+    executablePath: await chromium.executablePath(),
+  });
+
   const siteTab = await browser.newPage();
 
-  if (!import.meta.dev)
-    // This needs to be set as some websites serve different content based on the user agent
-    await siteTab.setUserAgent({
-      userAgent:
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-    });
+  // This needs to be set as some websites serve different content based on the user agent
+  await siteTab.setUserAgent({
+    userAgent:
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+  });
 
   try {
     const { origin } = new URL(url);
