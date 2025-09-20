@@ -1,3 +1,4 @@
+import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 import { z } from "zod";
 import { stringify } from "./data";
@@ -7,47 +8,39 @@ export default async (
   url: string,
   streamController: ReadableStreamDefaultController,
 ) => {
-  const puppeteer = import.meta.dev
-    ? await import("puppeteer")
-    : await import("puppeteer-core");
-
-  const options = !import.meta.dev
-    ? {
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
-      }
-    : { headless: false };
-
   streamController.enqueue(stringify({ event: "start" }));
 
-  // 1st step (Launch the browser)
-  const browser = await puppeteer.launch(options);
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+  });
+
+  const siteTab = await browser.newPage();
+
+  // This needs to be set as some websites serve different content based on the user agent
+  await siteTab.setUserAgent({
+    userAgent:
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+  });
 
   try {
-    // 2nd step (Open a new page - for the URL)
-    const siteTab = await browser.newPage();
-
-    // Get the origin of the URL (for cases of paths in URL)
     const { origin } = new URL(url);
 
     // 3rd step (Load the URL)
-    await siteTab.goto(origin);
+    await siteTab.goto(origin, { waitUntil: "domcontentloaded" });
 
     // 4th step (Check if there's a manifest link tag, provided the grace period of 3s)
-    const linkTagWithManifest = await siteTab
-      .waitForSelector('link[rel="manifest"]', { timeout: 5000 })
-      .catch(() => {
-        streamController.enqueue(
-          stringify({
-            event: "manifest:not-found",
-            data: { message: "No webmanifest was found during grace period." },
-          }),
-        );
+    const linkTagWithManifest = await siteTab.$('link[rel="manifest"]');
 
-        return null;
-      });
+    if (!linkTagWithManifest) {
+      streamController.enqueue(
+        stringify({
+          event: "manifest:not-found",
+        }),
+      );
 
-    if (!linkTagWithManifest) return;
+      return;
+    }
 
     const manifestHref = await linkTagWithManifest.evaluate((el) => el.href);
     const manifestContent = await $fetch(manifestHref, {
