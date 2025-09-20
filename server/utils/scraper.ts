@@ -30,7 +30,7 @@ export default async (
     await siteTab.goto(origin, { waitUntil: "domcontentloaded" });
 
     // 4th step (Check if there's a manifest link tag, provided the grace period of 3s)
-    const linkTagWithManifest = await siteTab.$('head link[rel="manifest"]');
+    const linkTagWithManifest = await siteTab.$('link[rel="manifest"]');
 
     if (!linkTagWithManifest) {
       streamController.enqueue(
