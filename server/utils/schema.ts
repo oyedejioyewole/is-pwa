@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-const DISPLAY_MODES = ["fullscreen", "minimal-ui", "standalone"] as const;
+const DISPLAY_MODES = [
+  "fullscreen",
+  "minimal-ui",
+  "standalone",
+  "browser",
+] as const;
 
 export const MANIFEST_SCHEMA = z
   .object({
@@ -21,13 +26,10 @@ export const MANIFEST_SCHEMA = z
       ),
     start_url: z.string(),
     display: z.enum(DISPLAY_MODES).optional(),
-    display_override: z.array(z.enum(DISPLAY_MODES)).optional(),
-    prefer_related_applications: z
-      .boolean()
-      .optional()
-      .refine((condition) => !condition, {
-        error: "property shouldn't be present, or must be false.",
-      }),
+    display_override: z
+      .array(z.enum([...DISPLAY_MODES, "tabbed", "windows-control-overlay"]))
+      .optional(),
+    prefer_related_applications: z.boolean().optional(),
   })
   .refine((schema) => schema.name || schema.short_name, {
     error: '"name" and/or "short_name" must be present.',

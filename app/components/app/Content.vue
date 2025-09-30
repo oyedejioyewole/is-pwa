@@ -6,17 +6,20 @@ type JSONStreamEvent = {
   event:
     | "start"
     | "error"
+    | "navigation:error"
+    | "navigation:redirect"
+    | "manifest:error"
     | "manifest:not-found"
     | "manifest:installable"
     | "manifest:not-installable"
     | "done";
-  data?: { message: string } | Record<string, unknown>;
+  data: { message: string } | Record<string, unknown>;
 };
 
 const INPUT_SCHEMA = z.httpUrl("Must be a valid URL");
 
 const rawUrl = shallowRef<string | null>(null);
-const pending = ref(false);
+const { start: startProgress, finish: finishProgress } = useLoadingIndicator();
 
 const handleSubmit = async () => {
   if (!rawUrl.value) return;
@@ -30,9 +33,6 @@ const handleSubmit = async () => {
   const { origin } = new URL(parsedUrl.data);
   console.info(`Dispatched request ${origin} to proxy`);
 
-  const notification = push.promise("Forwarding request");
-
-  pending.value = true;
   const response = await $fetch<ReadableStream>("/api/proxy", {
     method: "POST",
     body: {
@@ -47,39 +47,52 @@ const handleSubmit = async () => {
     switch (streamEvent.event) {
       case "start":
         console.info("[is-pwa] Stream started ...");
+        startProgress();
         break;
       case "error":
-        notification.error(
-          streamEvent.data?.message || "An error occurred at the proxy",
-        );
-        console.error("Error:", streamEvent.data);
+        push.error({
+          title: "Error",
+          message: streamEvent.data.message,
+        });
+        break;
+      case "manifest:error":
+        push.error({
+          title: "Error",
+          message: streamEvent.data.message,
+        });
         break;
       case "manifest:not-found":
-        notification.error({
-          title: "This site is not a PWA! ",
-          message: "because it doesn't have a webmanifest",
+        push.error({
+          title: "Error.",
+          message: streamEvent.data.message,
         });
         break;
       case "manifest:installable":
-        notification.success({
-          title: "This site is a PWA! 🎉",
-          message: "and it is installable",
+        push.success({
+          title: "Done.",
+          message: "You can install this as an app.",
+          props: {
+            detailType: "details",
+          },
+          duration: Infinity,
         });
+        console.log(streamEvent.data);
         break;
       case "manifest:not-installable":
-        notification.success({
-          title: "This site is a PWA! 🎉",
-          message: "but it is not installable",
-          props: streamEvent.data,
+        push.warning({
+          title: "Warning.",
+          message: "There are issues stopping this from being installable.",
+          props: { detailType: "issues" },
+          duration: Infinity,
         });
+        console.log(streamEvent.data);
         break;
       case "done":
         console.info("[is-pwa] Stream done ...");
+        finishProgress();
         break;
     }
   }
-
-  pending.value = false;
 };
 </script>
 
