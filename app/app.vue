@@ -1,8 +1,24 @@
-<script lang="ts" setup>
-import { outlinedIcons, darkTheme, lightTheme } from "notivue";
+<script setup lang="ts">
+import type { NotivueItem } from "notivue";
+import type { EventStreamNotificationProps } from "./components/app/EventNotification.vue";
 </script>
 
 <template>
+  <NuxtPwaAssets />
+
+  <ColorScheme>
+    <NuxtLoadingIndicator
+      :color="
+        $colorMode.value === 'light'
+          ? 'var(--color-orange-900)'
+          : 'var(--color-orange-100)'
+      "
+    />
+    <template #fallback>
+      <NuxtLoadingIndicator color="var(--color-orange-900)" />
+    </template>
+  </ColorScheme>
+
   <AppCursor />
 
   <Body
@@ -18,10 +34,8 @@ import { outlinedIcons, darkTheme, lightTheme } from "notivue";
   </Body>
 
   <Notivue v-slot="item">
-    <Notification
-      :icons="outlinedIcons"
-      :item="item"
-      :theme="$colorMode.value === 'dark' ? darkTheme : lightTheme"
+    <AppEventNotification
+      :item="item as NotivueItem<EventStreamNotificationProps>"
     />
   </Notivue>
 </template>
