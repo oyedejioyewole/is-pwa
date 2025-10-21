@@ -36,6 +36,7 @@
     "prettier-plugin-tailwindcss": "^0.7.1",
     "puppeteer": "^24.26.0"
   },
+  "packageManager": "bun@1.3.0",
   "description": "Check whether a site is installable as an app.",
   "displayName": "Is PWA?",
   "private": true,
