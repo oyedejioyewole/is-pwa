@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { z } from "zod/mini";
 import readNDJSONStream from "ndjson-readablestream";
+import type { EventStreamNotificationProps } from "./EventNotification.vue";
+import type { PushOptions } from "notivue";
 
 type JSONStreamEvent = {
   event:
@@ -13,13 +15,37 @@ type JSONStreamEvent = {
     | "manifest:installable"
     | "manifest:not-installable"
     | "done";
-  data: { message: string } | Record<string, unknown>;
+  data: {
+    message: string;
+    payload: EventStreamNotificationProps["payload"];
+  };
 };
 
 const INPUT_SCHEMA = z.httpUrl("Must be a valid URL");
 
 const rawUrl = shallowRef<string | null>(null);
-const { start: startProgress, finish: finishProgress } = useLoadingIndicator();
+const {
+  start: startProgress,
+  finish: finishProgress,
+  isLoading,
+} = useLoadingIndicator();
+const { entries: activeNotifications } = useNotifications();
+
+const pushEventNotification = (
+  eventType: keyof typeof push,
+  {
+    props = {} as EventStreamNotificationProps,
+    ...options
+  }: PushOptions<EventStreamNotificationProps>,
+) => {
+  push[eventType]({
+    title: `${eventType.charAt(0).toUpperCase()}${eventType.slice(1)}.`,
+    ...options,
+    props: {
+      ...props,
+    },
+  });
+};
 
 const handleSubmit = async () => {
   if (!rawUrl.value) return;
@@ -32,6 +58,8 @@ const handleSubmit = async () => {
 
   const { origin } = new URL(parsedUrl.data);
   console.info(`Dispatched request ${origin} to proxy`);
+
+  startProgress();
 
   const response = await $fetch<ReadableStream>("/api/proxy", {
     method: "POST",
@@ -47,79 +75,60 @@ const handleSubmit = async () => {
     switch (streamEvent.event) {
       case "start":
         console.info("[is-pwa] Stream started ...");
-        startProgress();
         break;
+
       case "error":
-        push.error({
-          title: "Error",
-          message: streamEvent.data.message,
-        });
-        break;
+      case "navigation:error":
+      case "navigation:redirect":
       case "manifest:error":
-        push.error({
-          title: "Error",
-          message: streamEvent.data.message,
-        });
-        break;
       case "manifest:not-found":
-        push.error({
-          title: "Error.",
-          message: streamEvent.data.message,
-        });
+        pushEventNotification("error", { message: streamEvent.data.message });
         break;
-      case "manifest:installable":
-        push.success({
-          title: "Done.",
-          message: "You can install this as an app.",
-          props: {
-            detailType: "details",
-          },
-          duration: Infinity,
-        });
-        console.log(streamEvent.data);
-        break;
+
       case "manifest:not-installable":
-        push.warning({
-          title: "Warning.",
-          message: "There are issues stopping this from being installable.",
-          props: { detailType: "issues" },
-          duration: Infinity,
+        pushEventNotification("warning", {
+          message: streamEvent.data.message,
+          props: { detailType: "issues", payload: streamEvent.data.payload },
+          duration: 3000,
         });
-        console.log(streamEvent.data);
         break;
+
+      case "manifest:installable":
+        pushEventNotification("success", {
+          message: streamEvent.data.message,
+          props: { detailType: "details", payload: streamEvent.data.payload },
+          duration: 3000,
+        });
+        break;
+
       case "done":
         console.info("[is-pwa] Stream done ...");
         finishProgress();
-        break;
     }
   }
 };
 </script>
 
 <template>
-  <main class="mx-auto self-center">
-    <form
-      class="flex flex-col items-center gap-4 md:flex-row"
-      @submit.prevent="handleSubmit()"
-    >
-      <input
-        class="hide-cursor rounded-full border border-orange-900 bg-transparent py-4 pl-4 ring-orange-900 outline-none hover:ring focus:ring dark:border-orange-100 dark:ring-orange-100"
-        name="url"
-        required
-        type="url"
-        v-model="rawUrl"
-      />
+  <main>
+    <UiInputGroup class="hide-cursor">
+      <UiInputGroupInput placeholder="https://youtube.com" v-model="rawUrl" />
+      <UiInputGroupAddon>
+        <UiIcon name="link" />
+      </UiInputGroupAddon>
+      <UiInputGroupAddon align="inline-end">
+        <UiInputGroupButton
+          :disabled="isLoading || !rawUrl || activeNotifications.length > 0"
+          variant="default"
+          class="gap-2"
+          @click="handleSubmit"
+        >
+          <UiIcon name="magnifying-glass" v-if="!isLoading" />
+          <UiSpinner v-else />
 
-      <button
-        class="hide-cursor w-full rounded-full border border-orange-900 bg-transparent py-4 ring-orange-900 outline-none hover:ring focus:ring md:w-20 dark:border-orange-100 dark:ring-orange-100"
-        type="submit"
-      >
-        <UiIcon
-          name="magnifying-glass"
-          class="mx-auto fill-orange-900 dark:fill-orange-100"
-          size="25"
-        />
-      </button>
-    </form>
+          {{ isLoading ? "Please wait" : "Inspect" }}
+        </UiInputGroupButton>
+      </UiInputGroupAddon>
+    </UiInputGroup>
   </main>
 </template>

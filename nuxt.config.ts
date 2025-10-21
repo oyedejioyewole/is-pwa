@@ -14,8 +14,9 @@ export default defineNuxtConfig({
     "@vueuse/nuxt",
     "notivue/nuxt",
     "nuxt-phosphor-icons",
+    "shadcn-nuxt",
   ],
-  css: ["notivue/animations.css", "notivue/notification.css"],
+  css: ["notivue/animations.css"],
   notivue: {
     position: "top-right",
   },

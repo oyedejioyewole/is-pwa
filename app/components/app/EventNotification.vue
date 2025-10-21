@@ -1,15 +1,36 @@
 <script lang="ts" setup>
 import type { NotivueItem } from "notivue";
-export interface EventStreamNotificationProps {
-  detailType: "metadata" | "issues";
-}
+import type z from "zod";
 
-defineProps<{ item: NotivueItem<EventStreamNotificationProps> }>();
+const dialogState = useDialog();
+
+defineProps<{
+  item: NotivueItem<EventStreamNotificationProps>;
+}>();
+
+export type EventStreamNotificationProps =
+  | {
+      detailType: "details";
+      payload: { manifestHref: string; manifestBlob: Record<string, unknown> };
+    }
+  | {
+      detailType: "issues";
+      payload: {
+        errorTree: ReturnType<typeof z.treeifyError>;
+        manifestHref: string;
+        rawManifest: Record<string, unknown>;
+      };
+    };
+
+const openDialog = (props: EventStreamNotificationProps) => {
+  dialogState.value = { ...dialogState.value, ...props };
+  dialogState.value.element!.showModal();
+};
 </script>
 
 <template>
   <div
-    class="max-w-2xs rounded-lg border bg-orange-100 p-4 shadow-lg transition has-[.notification-button]:space-y-4 dark:bg-orange-900"
+    class="bg-background border-muted max-w-2xs space-y-4 rounded-lg border p-4 transition"
   >
     <div class="space-y-1">
       <p
@@ -33,20 +54,16 @@ defineProps<{ item: NotivueItem<EventStreamNotificationProps> }>();
       <p>{{ $props.item.message }}</p>
     </div>
 
-    <div class="flex gap-x-4" v-if="$props.item.type !== 'error'">
-      <button @click="console.log" type="button" class="notification-button">
+    <div class="flex gap-x-2" v-if="$props.item.type !== 'error'">
+      <UiButton variant="outline" @click="openDialog($props.item.props)">
         <UiIcon name="scroll" size="18" weight="duotone" />
         View {{ $props.item.props.detailType }}
-      </button>
+      </UiButton>
 
-      <button
-        @click="$props.item.clear"
-        type="button"
-        class="notification-button"
-      >
+      <UiButton @click="$props.item.clear">
         <UiIcon name="x" />
         Close
-      </button>
+      </UiButton>
     </div>
   </div>
 </template>

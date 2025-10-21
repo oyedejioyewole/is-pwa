@@ -14,6 +14,27 @@ export default async (
 
   streamController.enqueue(stringify({ event: "start" }));
 
+  const requestFailed = await $fetch(url, {
+    method: "HEAD",
+    ignoreResponseError: true,
+  }).catch(() => null);
+
+  if (requestFailed === null) {
+    streamController.enqueue(
+      stringify({
+        event: "navigation:error",
+        data: {
+          message: "Couldn't load the provided URL.",
+        },
+      }),
+    );
+
+    streamController.enqueue(stringify({ event: "done" }));
+    streamController.close();
+
+    return;
+  }
+
   const browser = await puppeteer.launch(
     import.meta.dev
       ? { headless: false }
@@ -81,7 +102,7 @@ export default async (
           stringify({
             event: "manifest:not-found",
             data: {
-              message: "Couldn't find a webmanifest reference.",
+              message: "You can't install this as an app.",
             },
           }),
         );
@@ -123,24 +144,38 @@ export default async (
       return;
     }
 
-    // Validate the fetched webmanifest to standards for installablity.
-    const parsedManifest = await MANIFEST_SCHEMA.parseAsync(manifestContent);
+    const manifestBlob = await MANIFEST_SCHEMA.safeParseAsync(manifestContent);
 
-    streamController.enqueue(
-      stringify({
-        event: "manifest:installable",
-        data: parsedManifest,
-      }),
-    );
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
+    // Validate the fetched webmanifest to standards for installablity.
+    if (manifestBlob.success)
+      streamController.enqueue(
+        stringify({
+          event: "manifest:installable",
+          data: {
+            message: "You can install this as an app.",
+            payload: {
+              manifestHref,
+              manifestBlob: manifestBlob.data,
+            },
+          },
+        }),
+      );
+    else
       streamController.enqueue(
         stringify({
           event: "manifest:not-installable",
-          data: z.treeifyError(error),
+          data: {
+            message: "You can't install this as an app.",
+            payload: {
+              errorTree: z.treeifyError(manifestBlob.error),
+              manifestHref,
+              rawManifest: manifestContent,
+            },
+          },
         }),
       );
-    } else if (error instanceof Error) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
       streamController.enqueue(
         stringify({
           event: "error",

@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       data: z.prettifyError(parsedBody.error).split("\n"),
       message: "Failed to parse request body",
+      statusMessage: "Bad Request",
       statusCode: 400,
     });
 

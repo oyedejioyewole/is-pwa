@@ -6,34 +6,30 @@ import type { EventStreamNotificationProps } from "./components/app/EventNotific
 <template>
   <NuxtPwaAssets />
 
-  <ColorScheme>
-    <NuxtLoadingIndicator
-      :color="
-        $colorMode.value === 'light'
-          ? 'var(--color-orange-900)'
-          : 'var(--color-orange-100)'
-      "
-    />
-    <template #fallback>
-      <NuxtLoadingIndicator color="var(--color-orange-900)" />
-    </template>
-  </ColorScheme>
+  <NuxtLoadingIndicator color="var(--color-primary)" />
 
+  <!-- This is the cursor following animation. -->
   <AppCursor />
 
   <Body
-    class="mx-auto w-[90%] bg-orange-100 text-orange-900 transition selection:bg-black/10 md:overflow-hidden min-lg:w-3/4 dark:bg-orange-900 dark:text-orange-100 dark:selection:bg-white/10"
+    class="bg-background text-primary selection:bg-foreground/10 mx-auto w-[90%] transition md:overflow-hidden min-lg:w-3/4 dark:selection:bg-white/10"
   >
-    <div class="flex min-h-screen flex-col justify-between py-8">
-      <AppNavigation />
+    <div class="flex h-[calc(100vh_-_74px)] flex-col justify-center gap-y-4">
+      <h1 class="font-cursive text-4xl font-bold">Is it a PWA?</h1>
+      <p>Check whether a URL can be installed as a web app</p>
 
-      <AppHeader />
-
-      <AppFooter />
+      <!-- This is where things begin. -->
+      <AppContent />
     </div>
+
+    <AppFooter />
+
+    <!-- This contains the dialog for viewing manifests and warnings. -->
+    <AppDialog />
   </Body>
 
   <Notivue v-slot="item">
+    <!-- This is a wrapper for event notifications. -->
     <AppEventNotification
       :item="item as NotivueItem<EventStreamNotificationProps>"
     />
